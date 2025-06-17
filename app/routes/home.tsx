@@ -1,13 +1,23 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import Editor from '~/features/editor/editor';
+import type { Route } from './+types/home';
 
+// eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: 'Pixel Art Editor' },
+    { name: 'description', content: 'Welcome to Pixel Art Editor' },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return (
+    <>
+      <header className="w-full flex justify-center p-4 border-b-1">
+        <h1 className="text-2xl">Sprite Art Editor</h1>
+      </header>
+      <main className="container mx-auto p-4">
+        <Editor />
+      </main>
+    </>
+  );
 }
