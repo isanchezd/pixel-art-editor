@@ -1,9 +1,10 @@
 import {
   useCallback, useEffect, useState,
 } from 'react';
+import type { CanvasSize } from '../interfaces';
 
 interface EditorCanvasProps {
-  totalPixels: number;
+  totalPixels: CanvasSize;
   pixelSize: number;
   defaultColor: string;
   defaultColorEven: string;
@@ -24,7 +25,7 @@ export default function CanvasEditor({
   editorRef,
 }: EditorCanvasProps) {
   const [pixels, setPixels] = useState(
-    Array.from({ length: totalPixels }, () => Array.from({ length: totalPixels }, () => '')),
+    Array.from({ length: totalPixels.width }, () => Array.from({ length: totalPixels.height }, () => '')),
   );
   const [tempPixels, setTempPixels] = useState(pixels);
   const [isMouseDown, setIsMouseDown] = useState(false);
@@ -47,7 +48,7 @@ export default function CanvasEditor({
         });
       });
     },
-    [pixels],
+    [pixels, pixelSize, totalSize, defaultColor, defaultColorEven],
   );
 
   const getPixelPosition = (
@@ -58,13 +59,16 @@ export default function CanvasEditor({
     if (!editor) return;
 
     const rect = editor.getBoundingClientRect();
-    const x = xAxis - rect.left;
-    const y = yAxis - rect.top;
+    // Ajusta las coordenadas del mouse a la escala real del canvas
+    const scaleX = editor.width / rect.width;
+    const scaleY = editor.height / rect.height;
+    const x = (xAxis - rect.left) * scaleX;
+    const y = (yAxis - rect.top) * scaleY;
 
-    if (x > 0 + totalPixels * pixelSize || y > 0 + totalPixels * pixelSize) return;
+    if (x < 0 || y < 0 || x >= editor.width || y >= editor.height) return;
 
-    const row = Math.floor((x - 0) / pixelSize);
-    const col = Math.floor((y - 0) / pixelSize);
+    const row = Math.floor(x / pixelSize);
+    const col = Math.floor(y / pixelSize);
 
     // eslint-disable-next-line consistent-return
     return {
@@ -144,17 +148,33 @@ export default function CanvasEditor({
     if (!ctx) return;
 
     drawEditor(ctx);
-  }, [pixels]);
+  }, [pixels, pixelSize]);
+
+  useEffect(() => {
+    const newPixels = Array.from({ length: totalPixels.width }, () => Array.from({ length: totalPixels.height }, () => ''));
+    setPixels(newPixels);
+    setTempPixels(newPixels);
+  }, [totalPixels]);
 
   return (
-    <canvas
-      ref={editorRef}
-      width={totalSize}
-      height={totalSize}
-      onClick={handleClickCanvas}
-      onMouseDown={handleMouseDownCanvas}
-      onMouseUp={handleMouseUpCanvas}
-      onMouseMove={handleMouseMoveCanvas}
-    />
+    <div className="w-full flex flex-col justify-center items-center gap-1">
+      <h1>
+        Size:
+        {`${totalPixels.width}x${totalPixels.height}`}
+      </h1>
+      <div className="w-full flex justify-center overflow-x-auto overflow-y-auto max-h-[80vh]">
+        <canvas
+          className="size-full"
+          ref={editorRef}
+          width={totalSize}
+          height={totalSize}
+          style={{ width: totalSize, height: totalSize }}
+          onClick={handleClickCanvas}
+          onMouseDown={handleMouseDownCanvas}
+          onMouseUp={handleMouseUpCanvas}
+          onMouseMove={handleMouseMoveCanvas}
+        />
+      </div>
+    </div>
   );
 }

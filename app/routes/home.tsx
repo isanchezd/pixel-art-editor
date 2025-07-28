@@ -11,13 +11,6 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <>
-      <header className="w-full flex justify-center p-4 border-b-1">
-        <h1 className="text-2xl">Sprite Art Editor</h1>
-      </header>
-      <main className="container mx-auto p-4">
-        <Editor />
-      </main>
-    </>
+    <Editor />
   );
 }
