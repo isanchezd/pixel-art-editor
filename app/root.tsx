@@ -19,8 +19,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="size-full">
-        {children}
+      <body className="w-full h-screen">
+        <header className="flex p-4 border-b-1">
+          <div className="container mx-auto">
+            <h1 className="text-2xl">Sprite Art Editor</h1>
+          </div>
+        </header>
+        <main className="container mx-auto">{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>
