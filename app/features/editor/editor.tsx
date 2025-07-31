@@ -3,10 +3,11 @@ import {
   useRef, useState,
 } from 'react';
 import Toolbar from './components/toolbar';
-import CanvasEditor from './components/canvas-editor';
+import Canvas from './components/canvas';
 import type { CanvasSize, Preset } from './interfaces';
 import ResolutionSelectorDialog from './components/resolution-selector-dialog';
 import type { Route } from './+types/editor';
+import useDialog from './hooks/useDialog';
 
 // eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
@@ -25,21 +26,22 @@ export default function Editor() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
   const [color, setColor] = useState('blue');
-  const [pixels, setPixels] = useState<CanvasSize>({ width: PIXELS, height: PIXELS });
+  const [dimensions, setDimensions] = useState<CanvasSize>({ width: PIXELS, height: PIXELS });
+  const [pixels, setPixels] = useState(
+    Array.from({ length: dimensions.width }, () => Array.from({ length: dimensions.height }, () => '')),
+  );
   const [pixelSize, setPixelSize] = useState(DEFAULT_PIXEL_SIZE);
+  const [history, setHistory] = useState<string[][][]>(
+    [Array.from({ length: dimensions.width }, () => Array.from({ length: dimensions.height }, () => ''))],
+  );
+  const [historyIndex, setHistoryIndex] = useState(0);
   const editorRef = useRef<HTMLCanvasElement>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
+  const { dialogRef, openDialog, closeDialog } = useDialog();
 
-  const openDialog = () => {
-    if (dialog.current) {
-      dialog.current.showModal();
-    }
-  };
-
-  const closeDialog = () => {
-    if (dialog.current) {
-      dialog.current.close();
-    }
+  const handleOnSubmit = (preset: Preset) => {
+    setDimensions({ width: preset.width, height: preset.height });
+    setPixelSize(preset.pixelSize);
+    closeDialog();
   };
 
   useEffect(() => {
@@ -53,15 +55,20 @@ export default function Editor() {
         isErasing={isErasing}
         color={color}
         pixelSize={pixelSize}
-        pixels={pixels}
+        dimensions={dimensions}
+        history={history}
+        historyIndex={historyIndex}
         setIsDrawing={setIsDrawing}
         setIsErasing={setIsErasing}
         setColor={setColor}
         setPixelSize={setPixelSize}
+        setPixels={setPixels}
+        setHistoryIndex={setHistoryIndex}
         editorRef={editorRef}
       />
-      <CanvasEditor
-        totalPixels={pixels}
+      <Canvas
+        dimensions={dimensions}
+        pixels={pixels}
         pixelSize={pixelSize}
         defaultColor={DEFAULT_COLOR}
         defaultColorEven={DEFAULT_COLOR_EVEN}
@@ -69,15 +76,16 @@ export default function Editor() {
         isErasing={isErasing}
         color={color}
         editorRef={editorRef}
+        history={history}
+        historyIndex={historyIndex}
+        setPixels={setPixels}
+        setHistory={setHistory}
+        setHistoryIndex={setHistoryIndex}
       />
       <ResolutionSelectorDialog
-        ref={dialog}
+        ref={dialogRef}
         closeDialog={closeDialog}
-        onSubmit={(preset: Preset) => {
-          setPixels({ width: preset.width, height: preset.height });
-          setPixelSize(preset.pixelSize);
-          closeDialog();
-        }}
+        onSubmit={handleOnSubmit}
       />
     </section>
   );

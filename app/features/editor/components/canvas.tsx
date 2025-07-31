@@ -4,7 +4,8 @@ import {
 import type { CanvasSize } from '../interfaces';
 
 interface EditorCanvasProps {
-  totalPixels: CanvasSize;
+  dimensions: CanvasSize;
+  pixels: string[][];
   pixelSize: number;
   defaultColor: string;
   defaultColorEven: string;
@@ -12,10 +13,16 @@ interface EditorCanvasProps {
   isErasing: boolean;
   color: string;
   editorRef: React.RefObject<HTMLCanvasElement | null>;
+  history: string[][][];
+  historyIndex: number;
+  setPixels: React.Dispatch<React.SetStateAction<string[][]>>;
+  setHistory: React.Dispatch<React.SetStateAction<string[][][]>>;
+  setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function CanvasEditor({
-  totalPixels,
+export default function Canvas({
+  dimensions,
+  pixels,
   pixelSize,
   defaultColor,
   defaultColorEven,
@@ -23,10 +30,12 @@ export default function CanvasEditor({
   isErasing,
   color,
   editorRef,
+  history,
+  historyIndex,
+  setPixels,
+  setHistory,
+  setHistoryIndex,
 }: EditorCanvasProps) {
-  const [pixels, setPixels] = useState(
-    Array.from({ length: totalPixels.width }, () => Array.from({ length: totalPixels.height }, () => '')),
-  );
   const [tempPixels, setTempPixels] = useState(pixels);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
@@ -101,7 +110,13 @@ export default function CanvasEditor({
     }
 
     const { row, col } = valuePixel;
-    setPixels((prevData) => updatePixel(prevData, row, col));
+    const updatedPixels = updatePixel(pixels, row, col); // O usa prevData si lo necesitas
+
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(updatedPixels.map((newRow) => [...newRow]));
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setPixels(updatedPixels.map((newRow) => [...newRow]));
   };
 
   const handleMouseDownCanvas = (
@@ -151,16 +166,16 @@ export default function CanvasEditor({
   }, [pixels, pixelSize]);
 
   useEffect(() => {
-    const newPixels = Array.from({ length: totalPixels.width }, () => Array.from({ length: totalPixels.height }, () => ''));
+    const newPixels = Array.from({ length: dimensions.width }, () => Array.from({ length: dimensions.height }, () => ''));
     setPixels(newPixels);
     setTempPixels(newPixels);
-  }, [totalPixels]);
+  }, [dimensions]);
 
   return (
     <div className="w-full flex flex-col justify-center items-center gap-1">
       <h1>
         Size:
-        {`${totalPixels.width}x${totalPixels.height}`}
+        {`${dimensions.width}x${dimensions.height}`}
       </h1>
       <div className="w-full flex justify-center overflow-x-auto overflow-y-auto max-h-[80vh]">
         <canvas

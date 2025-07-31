@@ -1,4 +1,6 @@
-import { BrushIcon, DownloadIcon, EraserIcon } from 'lucide-react';
+import {
+  BrushIcon, DownloadIcon, EraserIcon, UndoIcon, RedoIcon,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Button from '~/components/button';
 import ColorSelector from '~/components/color-selector';
@@ -6,16 +8,20 @@ import Slider from '~/components/slider';
 
 const MAX_GRID_SIZE = 4096;
 
-interface ToolbarProps {
+interface Props {
   isDrawing: boolean;
   isErasing: boolean;
   color: string;
   pixelSize: number;
-  pixels: { width: number; height: number };
+  dimensions: { width: number; height: number };
+  history: string[][][];
+  historyIndex: number
   setIsDrawing: (isDrawing: boolean) => void;
   setIsErasing: (isErasing: boolean) => void;
   setColor: (color: string) => void;
   setPixelSize: (size: number) => void;
+  setHistoryIndex: (index: number) => void;
+  setPixels: React.Dispatch<React.SetStateAction<string[][]>>;
   editorRef: React.RefObject<HTMLCanvasElement | null>;
 }
 
@@ -24,18 +30,22 @@ export default function Toolbar({
   isErasing,
   color,
   pixelSize,
-  pixels,
+  dimensions,
+  history,
+  historyIndex,
   setIsDrawing,
   setIsErasing,
   setColor,
   setPixelSize,
+  setHistoryIndex,
+  setPixels,
   editorRef,
-}: ToolbarProps) {
+}: Props) {
   const [isColorPickerVisible, setIsColorPickerVisible] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
-  const gridSize = Math.max(pixels.width, pixels.height);
+  const gridSize = Math.max(dimensions.width, dimensions.height);
   const maxPixelSize = Math.floor(MAX_GRID_SIZE / gridSize);
   const minPixelSize = 1;
 
@@ -54,6 +64,16 @@ export default function Toolbar({
   const handleChangeColor = (newColor: { hex: string }) => {
     setIsColorPickerVisible(false);
     setColor(newColor.hex);
+  };
+
+  const handleClickUndo = () => {
+    setHistoryIndex(historyIndex - 1);
+    setPixels(history[historyIndex - 1].map((row) => [...row]));
+  };
+
+  const handleClickRedo = () => {
+    setHistoryIndex(historyIndex + 1);
+    setPixels(history[historyIndex + 1].map((row) => [...row]));
   };
 
   const handleOnClickDownload = () => {
@@ -85,6 +105,12 @@ export default function Toolbar({
         />
         <Button isActive={isErasing} onClick={handleClickErase}>
           <EraserIcon />
+        </Button>
+        <Button onClick={handleClickUndo} isDisabled={historyIndex <= 0}>
+          <UndoIcon />
+        </Button>
+        <Button onClick={handleClickRedo} isDisabled={historyIndex >= history.length - 1}>
+          <RedoIcon />
         </Button>
         <Button isActive={false} onClick={handleOnClickDownload}>
           <DownloadIcon />
